@@ -487,10 +487,10 @@
                     const dist = Math.sqrt(dx * dx + dy * dy);
                     
                     if (dist < 200) {
-                        if (sizeRatio > 1.3) {
+                        if (sizeRatio > 1.15) {
                             this.targetX = this.x - dx * 0.5;
                             this.targetY = this.y - dy * 0.5;
-                        } else if (sizeRatio < 0.7) {
+                        } else if (sizeRatio < 0.85) {
                             this.targetX = player.x;
                             this.targetY = player.y;
                         }
@@ -609,22 +609,32 @@
                 const key = e.key.toLowerCase();
                 const targetKeys = ['q', 'w', 'e'];
                 
-                if (key === targetKeys[currentInputIndex]) {
-                    inputSequence += key;
-                    currentInputIndex++;
-                    updateInputDisplay();
+                if (key === 'q' || key === 'w' || key === 'e') {
+                    e.preventDefault();
+                    e.stopPropagation();
                     
-                    if (currentInputIndex >= 3) {
-                        unfreezeGame();
+                    const expectedKey = targetKeys[currentInputIndex];
+                    
+                    if (key === expectedKey) {
+                        inputSequence += key;
+                        currentInputIndex++;
+                        updateInputDisplay();
+                        
+                        if (currentInputIndex >= 3) {
+                            setTimeout(() => {
+                                unfreezeGame();
+                            }, 100);
+                        }
+                    } else {
+                        if (key === 'q') {
+                            inputSequence = 'q';
+                            currentInputIndex = 1;
+                        } else {
+                            inputSequence = '';
+                            currentInputIndex = 0;
+                        }
+                        updateInputDisplay();
                     }
-                } else if (key === 'q' || key === 'w' || key === 'e') {
-                    inputSequence = key;
-                    currentInputIndex = key === 'q' ? 1 : 0;
-                    if (key !== 'q') {
-                        inputSequence = '';
-                        currentInputIndex = 0;
-                    }
-                    updateInputDisplay();
                 }
             }
         });
@@ -835,13 +845,12 @@
                     if (checkCollision(player, fish)) {
                         const sizeRatio = fish.baseSize / player.baseSize;
                         
-                        const freezeMinRatio = 0.85;
-                        const freezeMaxRatio = 1.18;
-                        const eatMaxRatio = 0.75;
+                        const freezeMinRatio = 0.92;
+                        const freezeMaxRatio = 1.08;
+                        const eatMaxRatio = 0.92;
+                        const hurtMinRatio = 1.08;
                         
-                        if (sizeRatio >= freezeMinRatio && sizeRatio <= freezeMaxRatio && !isFrozen) {
-                            freezeGame(player, fish);
-                        } else if (sizeRatio <= eatMaxRatio) {
+                        if (sizeRatio <= eatMaxRatio) {
                             createEatingParticles(fish.x, fish.y, fish.color);
                             score += Math.floor(fish.baseSize * 10);
                             
@@ -855,7 +864,9 @@
                             if (score >= levelTarget) {
                                 levelUp();
                             }
-                        } else if (sizeRatio > freezeMaxRatio) {
+                        } else if (sizeRatio >= freezeMinRatio && sizeRatio <= freezeMaxRatio && !isFrozen) {
+                            freezeGame(player, fish);
+                        } else if (sizeRatio >= hurtMinRatio) {
                             if (!isFrozen) {
                                 createDamageParticles(player.x, player.y);
                                 health -= 15;
@@ -883,13 +894,13 @@
                         if (checkCollision(fish1, fish2)) {
                             const sizeRatio = fish1.baseSize / fish2.baseSize;
                             
-                            if (sizeRatio > 1.3) {
+                            if (sizeRatio > 1.15) {
                                 createEatingParticles(fish2.x, fish2.y, fish2.color);
                                 fish1.baseSize = Math.min(100, fish1.baseSize + fish2.baseSize * 0.05);
                                 fish1.speed = fish1.calculateSpeed();
                                 fishes.splice(j, 1);
                                 j--;
-                            } else if (sizeRatio < 0.7) {
+                            } else if (sizeRatio < 0.87) {
                                 createEatingParticles(fish1.x, fish1.y, fish1.color);
                                 fish2.baseSize = Math.min(100, fish2.baseSize + fish1.baseSize * 0.05);
                                 fish2.speed = fish2.calculateSpeed();
